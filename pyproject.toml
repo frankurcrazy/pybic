@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pybic"
+version = "0.1.0"
+description = "driver for meanwell bi-directional charger"
+authors = ["Frank Chang"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+gs-usb = "^0.3.0"
+python-can = "^4.2.2"
+pyusb = "^1.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
