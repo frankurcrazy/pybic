@@ -7,10 +7,25 @@ import queue
 import time
 import functools
 import math
+import collections
 
 import pybic.cmd
 import pybic.listener
-from pybic.utils import format_can_message
+from pybic.utils import format_can_message, Promise
+
+def wait_for(cmd):
+    def decorator(method):
+        def _impl(self, *args, **kwargs):
+            if cmd not in self._promises:
+                self._promises[cmd] = collections.deque()
+            promise = Promise()
+            self._promises[cmd].append(promise)
+            method(self, *args, *kwargs)
+
+            return promise.result
+        return _impl
+    return decorator
+                    
 
 class MessageSender:
     """ Command sender queues the command sending request and create a task 
@@ -58,7 +73,7 @@ class Bic:
         self._listener = pybic.listener.BicListener(bic=self)
         can.Notifier(bus, [self._listener])
 
-        self.properties = {}
+        self._promises = {}
 
     def _msg_factory(self, command, data=None) -> can.message.Message:
         data_bytes = struct.pack("<H", command[0])
@@ -72,6 +87,7 @@ class Bic:
                 data=data_bytes)
 
     @property
+    @wait_for("operation")
     def operation(self):
         """ query the operation of bic
         """
@@ -79,10 +95,6 @@ class Bic:
         msg = self._msg_factory(
             command=pybic.cmd.OPERATION)
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("operation")
 
     @operation.setter
     def operation(self, value: bool) -> None:
@@ -100,6 +112,7 @@ class Bic:
 
     @property
     @functools.lru_cache
+    @wait_for("scaling_factor")
     def scaling_factor(self):
         """ query the scaling factor of the bic
         """
@@ -107,11 +120,8 @@ class Bic:
                 command=pybic.cmd.SCALING_FACTOR)
         self._msg_sender.send(msg)
 
-        time.sleep(0.5)
-
-        return self.properties.get("scaling_factor")
-
     @property
+    @wait_for("v_in")
     def v_in(self):
         """ query the v_out of the bic
         """
@@ -120,11 +130,8 @@ class Bic:
 
         self._msg_sender.send(msg)
 
-        time.sleep(0.5)
-
-        return self.properties.get("v_in")
-
     @property
+    @wait_for("reverse_v_out")
     def reverse_v_out(self):
         """ query the reverse_v_out of the bic
         """
@@ -132,10 +139,6 @@ class Bic:
                 command=pybic.cmd.REVERSE_VOUT_SET)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("reverse_v_out")
 
     @reverse_v_out.setter
     def reverse_v_out(self, value):
@@ -153,6 +156,7 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("reverse_i_out")
     def reverse_i_out(self):
         """ query the reverse_i_out of the bic
         """
@@ -160,10 +164,6 @@ class Bic:
                 command=pybic.cmd.REVERSE_IOUT_SET)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("reverse_i_out")
 
     @reverse_i_out.setter
     def reverse_i_out(self, value):
@@ -181,6 +181,7 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("v_out")
     def v_out(self):
         """ query the v_out of the bic
         """
@@ -188,10 +189,6 @@ class Bic:
                 command=pybic.cmd.READ_VOUT)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("v_out")
 
     @v_out.setter
     def v_out(self, value):
@@ -209,6 +206,7 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("i_out")
     def i_out(self):
         """ query the i_out of the bic
         """
@@ -216,10 +214,6 @@ class Bic:
                 command=pybic.cmd.READ_IOUT)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("i_out")
 
     @i_out.setter
     def i_out(self, value):
@@ -237,15 +231,12 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
-    def system_config(self) -> dict:
+    @wait_for("system_config")
+    def system_config(self):
         msg = self._msg_factory(
                 command=pybic.cmd.SYSTEM_CONFIG)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties.get("system_config")
 
     @system_config.setter
     def system_config(self, value: dict) -> None:
@@ -264,15 +255,12 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("bidirectional_config")
     def bidirectional_config(self):
         msg = self._msg_factory(
                 command=pybic.cmd.BIDIRECTIONAL_CONFIG)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties["bidirectional_config"]
 
     @bidirectional_config.setter
     def bidirectional_config(self, value: dict) -> None:
@@ -286,15 +274,12 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("direction_ctrl")
     def direction_ctrl(self):
         msg = self._msg_factory(
                 command=pybic.cmd.DIRECTION_CTRL)
 
         self._msg_sender.send(msg)
-
-        time.sleep(0.5)
-
-        return self.properties["direction_ctrl"]
 
     @direction_ctrl.setter
     def direction_ctrl(self, value: int) -> None:

@@ -35,6 +35,7 @@ class BicListener(can.Listener):
                 pybic.cmd.SYSTEM_CONFIG[0]: self._handle_cmd_system_config,
                 pybic.cmd.BIDIRECTIONAL_CONFIG[0]: self._handle_cmd_bidirectional_config,
                 pybic.cmd.DIRECTION_CTRL[0]: self._handle_cmd_direction_ctrl,
+                pybic.cmd.READ_TEMPERATURE[0]: self._handle_cmd_read_temperature,
         }
 
         if not self._bic:
@@ -59,12 +60,19 @@ class BicListener(can.Listener):
     def stop(self) -> None:
         pass
 
-    def _set_bic_property(self, key, value):
+    def _fulfill_bic_promises(self, key, value):
         if not self._bic:
-            self._logger.warn(f"bic is none, skip setting property {key} -> {value}")
+            self._logger.warn(f"bic is none, skip fulfilling promises for key {key}")
             return
 
-        self._bic.properties[key] = value
+        if key not in self._bic._promises:
+            self._logger.warn(f"key does not exist in promise map, skip fulfilling promises for key {key}")
+            return
+
+        for promise in self._bic._promises[key]:
+            promise.set_result(value)
+
+        self._bic._promises[key].clear()
 
     def _handle_to_controller(self, msg: can.message.Message) -> None:
         cmd, = struct.unpack("<H", msg.data[:CMD_LENGTH])
@@ -79,17 +87,17 @@ class BicListener(can.Listener):
         pass
 
     def _handle_cmd_operation(self, msg: can.message.Message) -> None:
-        self._set_bic_property("operation", True if msg.data[2] == 1 else False)
+        self._fulfill_bic_promises("operation", True if msg.data[2] == 1 else False)
 
     def _handle_cmd_read_vin(self, msg: can.message.Message) -> None:
         v_in_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._set_bic_property("v_in", v_in_raw * self._bic.scaling_factor["v_in"])
+        self._fulfill_bic_promises("v_in", v_in_raw * self._bic.scaling_factor["v_in"])
 
     def _handle_cmd_read_vout(self, msg: can.message.Message) -> None:
         v_out_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._set_bic_property("v_out", v_out_raw * self._bic.scaling_factor["v_out"])
+        self._fulfill_bic_promises("v_out", v_out_raw * self._bic.scaling_factor["v_out"])
 
     def _handle_cmd_scaling_factor(self, msg: can.message.Message) -> None:
         # trim the command from the data
@@ -102,7 +110,7 @@ class BicListener(can.Listener):
         temperature_factor = convert_scaling_factor(data[2] & 0x0f)
         i_in_factor = convert_scaling_factor(data[3] & 0x0f)
 
-        self._set_bic_property("scaling_factor", {
+        self._fulfill_bic_promises("scaling_factor", {
             "v_out": v_out_factor,
             "i_out": i_out_factor,
             "v_in": v_in_factor,
@@ -118,7 +126,7 @@ class BicListener(can.Listener):
         operation_init = (data[0] & 0x06) >> 1
         can_ctrl = (data[0] & 0x01) 
 
-        self._set_bic_property("system_config", {
+        self._fulfill_bic_promises("system_config", {
             "operation_init": operation_init,
             "can_ctrl": can_ctrl,
         })
@@ -127,7 +135,7 @@ class BicListener(can.Listener):
         # trim the command from the data
         data = msg.data[2:]
 
-        self._set_bic_property("bidirectional_config", {
+        self._fulfill_bic_promises("bidirectional_config", {
             "mode": data[0] & 0x01,
             })
 
@@ -135,19 +143,24 @@ class BicListener(can.Listener):
         # trim the command from the data
         data = msg.data[2]
 
-        self._set_bic_property("direction_ctrl", data)
+        self._fulfill_bic_promises("direction_ctrl", data)
 
     def _handle_cmd_reverse_vout(self, msg: can.message.Message) -> None:
         rev_v_out_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._set_bic_property("reverse_v_out", rev_v_out_raw * self._bic.scaling_factor["v_out"])
+        self._fulfill_bic_promises("reverse_v_out", rev_v_out_raw * self._bic.scaling_factor["v_out"])
 
     def _handle_cmd_reverse_iout(self, msg: can.message.Message) -> None:
         rev_i_out_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._set_bic_property("reverse_i_out", rev_i_out_raw * self._bic.scaling_factor["i_out"])
+        self._fulfill_bic_promises("reverse_i_out", rev_i_out_raw * self._bic.scaling_factor["i_out"])
 
     def _handle_cmd_read_iout(self, msg: can.message.Message) -> None:
         i_out_raw, = struct.unpack("<h", msg.data[2: msg.dlc])
 
-        self._set_bic_property("i_out", i_out_raw * self._bic.scaling_factor["i_out"])
+        self._fulfill_bic_promises("i_out", i_out_raw * self._bic.scaling_factor["i_out"])
+
+    def _handle_cmd_read_temperature(self, msg: can.message.Message) -> None:
+        temp_raw, = struct.unpack("<h",  msg.data[2: msg.dlc])
+
+        self._fulfill_bic_promises("temperature", temp_raw * self._bic.scaling_factor["temperature"])
