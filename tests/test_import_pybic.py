@@ -1,7 +1,7 @@
 import unittest
 
-class TestImportPyBic(unittest.TestCase):
 
+class TestImportPyBic(unittest.TestCase):
     def test_import_pybic(self):
         try:
             import pybic
