@@ -2,7 +2,23 @@
 
 
 
-## v0.1.1 (2023-09-01)
+## v0.1.2 (2023-09-01)
+
+### Fix
+
+* fix(bic): prefetch scaling factor to avoid hanging
+
+fix(bic): strip mfr model
+
+when quering temperature without first quering scaling factor,
+the library would hang, without receving scaling factor response.
+
+and no subsequent response is ever received until a system reboot.
+by prefetching scaling factor before doing anything, we can workaround
+the issue. ([`1cf8f3c`](https://github.com/frankurcrazy/pybic/commit/1cf8f3c1413117d50a20ac5a02d7a77a01602c8e))
+
+
+## v0.1.1 (2023-08-31)
 
 ### Chore
 
