@@ -292,6 +292,14 @@ class Bic:
         self._msg_sender.send(msg)
 
     @property
+    @wait_for("system_status")
+    def system_status(self):
+        """query the system status of the bic"""
+        msg = self._msg_factory(command=pybic.cmd.SYSTEM_STATUS)
+
+        self._msg_sender.send(msg)
+
+    @property
     @functools.lru_cache
     @wait_for("mfr_id_b0b5")
     def mfr_id_b0b5(self):

@@ -42,6 +42,7 @@ class BicListener(can.Listener):
             pybic.cmd.DIRECTION_CTRL[0]: self._handle_cmd_direction_ctrl,
             pybic.cmd.READ_TEMPERATURE[0]: self._handle_cmd_read_temperature,
             pybic.cmd.FAULT_STATUS[0]: self._handle_cmd_fault_status,
+            pybic.cmd.SYSTEM_STATUS[0]: self._handle_cmd_system_status,
             pybic.cmd.MFR_ID_B0B5[0]: self._handle_cmd_mfr_id_b0b5,
             pybic.cmd.MFR_ID_B6B11[0]: self._handle_cmd_mfr_id_b6b11,
             pybic.cmd.MFR_MODEL_B0B5[0]: self._handle_cmd_mfr_model_b0b5,
@@ -214,19 +215,35 @@ class BicListener(can.Listener):
         )
 
     def _handle_cmd_fault_status(self, msg: can.message.Message) -> None:
+        data = msg.data[2 : msg.dlc]
+
         fault_status = {
-            "fan_fail": (msg.data[0] & 0x01) > 0,
-            "otp": (msg.data[0] & 0x02) > 0,
-            "ovp": (msg.data[0] & 0x04) > 0,
-            "olp": (msg.data[0] & 0x08) > 0,
-            "short": (msg.data[0] & 0x10) > 0,
-            "ac_fail": (msg.data[0] & 0x20) > 0,
-            "op_off": (msg.data[0] & 0x40) > 0,
-            "hi_temp": (msg.data[0] & 0x80) > 0,
-            "hv_ovp": (msg.data[1] & 0x01) > 0,
+            "fan_fail": (data[0] & 0x01) > 0,
+            "otp": (data[0] & 0x02) > 0,
+            "ovp": (data[0] & 0x04) > 0,
+            "olp": (data[0] & 0x08) > 0,
+            "short": (data[0] & 0x10) > 0,
+            "ac_fail": (data[0] & 0x20) > 0,
+            "op_off": (data[0] & 0x40) > 0,
+            "hi_temp": (data[0] & 0x80) > 0,
+            "hv_ovp": (data[1] & 0x01) > 0,
         }
 
         self._fulfill_bic_promises("fault_status", fault_status)
+
+    def _handle_cmd_system_status(self, msg: can.message.Message) -> None:
+        data = msg.data[2 : msg.dlc]
+
+        system_status = {
+            "m/s": (data[0] & 0x01) > 0,
+            "dc_ok": (data[0] & 0x02) > 0,
+            "pfc_ok": (data[0] & 0x04) > 0,
+            "adl_on": (data[0] & 0x10) > 0,
+            "initial_state": (data[0] & 0x20) > 0,
+            "eeper": (data[0] & 0x40) > 0,
+        }
+
+        self._fulfill_bic_promises("system_status", system_status)
 
     def _handle_cmd_mfr_id_b0b5(self, msg: can.message.Message) -> None:
         self._fulfill_bic_promises("mfr_id_b0b5", msg.data[2 : msg.dlc].decode())
