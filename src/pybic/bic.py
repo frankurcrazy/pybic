@@ -288,3 +288,134 @@ class Bic:
                 data=bytes([value,]))
 
         self._msg_sender.send(msg)
+
+    @property
+    @wait_for("temperature")
+    def temperature(self):
+        """ query the temperature of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.READ_TEMPERATURE)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @wait_for("fault_status")
+    def fault_status(self):
+        """ query the fault status of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.FAULT_STATUS)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_id_b0b5")
+    def mfr_id_b0b5(self):
+        """ query the mfr_id_b0b5 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_ID_B0B5)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_id_b6b11")
+    def mfr_id_b6b11(self):
+        """ query the mfr_id_b6b11 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_ID_B6B11)
+
+        self._msg_sender.send(msg)
+
+    @property
+    def mfr_id(self):
+        return (self.mfr_id_b0b5 + self.mfr_id_b6b11)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_model_b0b5")
+    def mfr_model_b0b5(self):
+        """ query the mfr_model_b0b5 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_MODEL_B0B5)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_model_b6b11")
+    def mfr_model_b6b11(self):
+        """ query the mfr_model_b6b11 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_MODEL_B6B11)
+
+        self._msg_sender.send(msg)
+
+    @property
+    def mfr_model(self):
+        return (self.mfr_model_b0b5 + self.mfr_model_b6b11)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_serial_b0b5")
+    def mfr_serial_b0b5(self):
+        """ query the mfr_serial_b0b5 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_SERIAL_B0B5)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_serial_b6b11")
+    def mfr_serial_b6b11(self):
+        """ query the mfr_serial_b6b11 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_SERIAL_B6B11)
+
+        self._msg_sender.send(msg)
+
+    @property
+    def mfr_serial(self):
+        return (self.mfr_serial_b0b5 + self.mfr_serial_b6b11)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_date_b0b5")
+    def mfr_date(self):
+        """ query the mfr_date_b0b5 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_DATE_B0B5)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_revision_b0b5")
+    def mfr_revision(self):
+        """ query the mfr_revision_b0b5 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_REVISION_B0B5)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @functools.lru_cache
+    @wait_for("mfr_location_b0b2")
+    def mfr_location(self):
+        """ query the mfr_location_b0b2 of the bic
+        """
+        msg = self._msg_factory(
+                command=pybic.cmd.MFR_LOCATION_B0B2)
+
+        self._msg_sender.send(msg)

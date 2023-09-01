@@ -36,6 +36,16 @@ class BicListener(can.Listener):
                 pybic.cmd.BIDIRECTIONAL_CONFIG[0]: self._handle_cmd_bidirectional_config,
                 pybic.cmd.DIRECTION_CTRL[0]: self._handle_cmd_direction_ctrl,
                 pybic.cmd.READ_TEMPERATURE[0]: self._handle_cmd_read_temperature,
+                pybic.cmd.FAULT_STATUS[0]: self._handle_cmd_fault_status,
+                pybic.cmd.MFR_ID_B0B5[0]: self._handle_cmd_mfr_id_b0b5,
+                pybic.cmd.MFR_ID_B6B11[0]: self._handle_cmd_mfr_id_b6b11,
+                pybic.cmd.MFR_MODEL_B0B5[0]: self._handle_cmd_mfr_model_b0b5,
+                pybic.cmd.MFR_MODEL_B6B11[0]: self._handle_cmd_mfr_model_b6b11,
+                pybic.cmd.MFR_SERIAL_B0B5[0]: self._handle_cmd_mfr_serial_b0b5,
+                pybic.cmd.MFR_SERIAL_B6B11[0]: self._handle_cmd_mfr_serial_b6b11,
+                pybic.cmd.MFR_DATE_B0B5[0]: self._handle_cmd_mfr_date_b0b5,
+                pybic.cmd.MFR_REVISION_B0B5[0]: self._handle_cmd_mfr_revision_b0b5,
+                pybic.cmd.MFR_LOCATION_B0B2[0]: self._handle_cmd_mfr_location_b0b2,
         }
 
         if not self._bic:
@@ -66,7 +76,8 @@ class BicListener(can.Listener):
             return
 
         if key not in self._bic._promises:
-            self._logger.warn(f"key does not exist in promise map, skip fulfilling promises for key {key}")
+            self._logger.warn(
+                    f"key does not exist in promise map, skip fulfilling promises for key {key}")
             return
 
         for promise in self._bic._promises[key]:
@@ -75,6 +86,10 @@ class BicListener(can.Listener):
         self._bic._promises[key].clear()
 
     def _handle_to_controller(self, msg: can.message.Message) -> None:
+        if msg.arbitration_id & 0x000ff != self._bic._arbitration_id & 0x000ff:
+            # skip message not meant for us
+            return
+
         cmd, = struct.unpack("<H", msg.data[:CMD_LENGTH])
 
         if cmd not in self._command_handlers:
@@ -148,12 +163,14 @@ class BicListener(can.Listener):
     def _handle_cmd_reverse_vout(self, msg: can.message.Message) -> None:
         rev_v_out_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._fulfill_bic_promises("reverse_v_out", rev_v_out_raw * self._bic.scaling_factor["v_out"])
+        self._fulfill_bic_promises("reverse_v_out",
+                rev_v_out_raw * self._bic.scaling_factor["v_out"])
 
     def _handle_cmd_reverse_iout(self, msg: can.message.Message) -> None:
         rev_i_out_raw, = struct.unpack("<H", msg.data[2: msg.dlc])
 
-        self._fulfill_bic_promises("reverse_i_out", rev_i_out_raw * self._bic.scaling_factor["i_out"])
+        self._fulfill_bic_promises("reverse_i_out",
+                rev_i_out_raw * self._bic.scaling_factor["i_out"])
 
     def _handle_cmd_read_iout(self, msg: can.message.Message) -> None:
         i_out_raw, = struct.unpack("<h", msg.data[2: msg.dlc])
@@ -164,3 +181,50 @@ class BicListener(can.Listener):
         temp_raw, = struct.unpack("<h",  msg.data[2: msg.dlc])
 
         self._fulfill_bic_promises("temperature", temp_raw * self._bic.scaling_factor["temperature"])
+
+    def _handle_cmd_fault_status(self, msg: can.message.Message) -> None:
+        fault_status = {
+                'fan_fail': (msg.data[0] & 0x01) > 0,
+                'otp': (msg.data[0] & 0x02) > 0,
+                'ovp': (msg.data[0] & 0x04) > 0,
+                'olp': (msg.data[0] & 0x08) > 0,
+                'short': (msg.data[0] & 0x10) > 0,
+                'ac_fail': (msg.data[0] & 0x20) > 0,
+                'op_off': (msg.data[0] & 0x40) > 0,
+                'hi_temp': (msg.data[0] & 0x80) > 0,
+                'hv_ovp': (msg.data[1] & 0x01) > 0,
+        }
+
+        self._fulfill_bic_promises("fault_status", fault_status)
+
+    def _handle_cmd_mfr_id_b0b5(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_id_b0b5", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_id_b6b11(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_id_b6b11", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_model_b0b5(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_model_b0b5", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_model_b6b11(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_model_b6b11", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_serial_b0b5(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_serial_b0b5", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_serial_b6b11(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_serial_b6b11", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_date_b0b5(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_date_b0b5", msg.data[2: msg.dlc].decode())
+
+    def _handle_cmd_mfr_revision_b0b5(self, msg: can.message.Message) -> None:
+        revision_list = []
+        for rev in msg.data[2: msg.dlc]:
+            if rev != 0xff:
+                revision_list.append(f"r{rev/10:2.1f}")
+
+        self._fulfill_bic_promises("mfr_revision_b0b5", tuple(revision_list))
+
+    def _handle_cmd_mfr_location_b0b2(self, msg: can.message.Message) -> None:
+        self._fulfill_bic_promises("mfr_location_b0b2", msg.data[2: msg.dlc].decode())
