@@ -2,6 +2,15 @@
 
 
 
+## v0.2.0 (2023-09-01)
+
+### Feature
+
+* feat(bic): add support for system_status
+
+fix(bic): fix incorrect fault_status mapping ([`4f4a00a`](https://github.com/frankurcrazy/pybic/commit/4f4a00a4163f17af8e7fe210e14960ab1d255d90))
+
+
 ## v0.1.3 (2023-09-01)
 
 ### Fix
