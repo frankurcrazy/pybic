@@ -82,6 +82,9 @@ class Bic:
 
         self._promises = {}
 
+        # prefetch scaling factor
+        self.scaling_factor
+
     def _msg_factory(self, command, data=None) -> can.message.Message:
         data_bytes = struct.pack("<H", command[0])
 
@@ -330,7 +333,7 @@ class Bic:
 
     @property
     def mfr_model(self):
-        return self.mfr_model_b0b5 + self.mfr_model_b6b11
+        return (self.mfr_model_b0b5 + self.mfr_model_b6b11).strip()
 
     @property
     @functools.lru_cache
