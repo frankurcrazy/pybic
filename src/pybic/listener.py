@@ -1,3 +1,5 @@
+import atexit
+import concurrent.futures
 import logging
 import struct
 
@@ -24,6 +26,8 @@ class BicListener(can.Listener):
 
         self._logger = logging.getLogger(__name__)
         self._bic = kwargs.get("bic", None)
+
+        self._handler_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
         self._command_handlers = {
             pybic.cmd.OPERATION[0]: self._handle_cmd_operation,
@@ -52,6 +56,8 @@ class BicListener(can.Listener):
         if not self._bic:
             self._logger.warn(f"bic is none")
 
+        atexit.register(self.stop)
+
     def on_error(self, exc: Exception) -> None:
         self._logger.error(f"encounter error: {exc}")
 
@@ -75,7 +81,7 @@ class BicListener(can.Listener):
             )
 
     def stop(self) -> None:
-        pass
+        self._handler_job_queue.shutdown(cancel_futures=True)
 
     def _fulfill_bic_promises(self, key, value):
         if not self._bic:
@@ -104,7 +110,7 @@ class BicListener(can.Listener):
             self._logger.warn(f"handler not implemented for command: {cmd}")
             return
 
-        self._command_handlers[cmd](msg=msg)
+        self._handler_thread_pool.submit(self._command_handlers[cmd], msg=msg)
 
     def _handle_from_controller(self, msg: can.message.Message) -> None:
         pass
