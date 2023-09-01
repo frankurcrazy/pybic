@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pybic"
-version = "0.1.2"
+version = "0.1.3"
 description = "driver for meanwell bi-directional charger"
 authors = ["Frank Chang"]
 license = "MIT"

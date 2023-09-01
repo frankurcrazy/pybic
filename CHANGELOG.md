@@ -2,6 +2,21 @@
 
 
 
+## v0.1.3 (2023-09-01)
+
+### Fix
+
+* fix(listener): fix hanging issue described in 1cf8f3c
+
+the hanging described in previous commit is due to deadlock in
+can.Notifier, essentially you should not block
+`Notifier.on_message_received` as it is called after acquiring a mutex,
+so that only one handler may be executed at a time.
+
+the solution to this problem is to execute handler asynchrounusly
+with a thread pool. ([`220f733`](https://github.com/frankurcrazy/pybic/commit/220f733b2473980567bd6b2dcf53e0acc9a8a3da))
+
+
 ## v0.1.2 (2023-09-01)
 
 ### Fix
