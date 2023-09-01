@@ -2,7 +2,18 @@
 
 
 
-## v0.1.0 (2023-09-01)
+## v0.1.1 (2023-09-01)
+
+### Chore
+
+* chore: bump poetry.lock ([`7ab14a5`](https://github.com/frankurcrazy/pybic/commit/7ab14a5b9099328404206c440a41481e089989ee))
+
+### Fix
+
+* fix: expose Bic to the pybic package ([`cb68adf`](https://github.com/frankurcrazy/pybic/commit/cb68adf69d4204c16486b5aa789813e544174bf8))
+
+
+## v0.1.0 (2023-08-31)
 
 ### Chore
 
