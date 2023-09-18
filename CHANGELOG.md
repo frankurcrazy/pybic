@@ -2,6 +2,13 @@
 
 
 
+## v0.3.0 (2023-09-19)
+
+### Feature
+
+* feat: support reading iout_set and vout_set ([`1d03f20`](https://github.com/frankurcrazy/pybic/commit/1d03f206214ac2c524353735c65600ab917ea5cd))
+
+
 ## v0.2.0 (2023-09-01)
 
 ### Feature
