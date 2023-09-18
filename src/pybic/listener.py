@@ -36,7 +36,9 @@ class BicListener(can.Listener):
             pybic.cmd.READ_IOUT[0]: self._handle_cmd_read_iout,
             pybic.cmd.REVERSE_VOUT_SET[0]: self._handle_cmd_reverse_vout,
             pybic.cmd.READ_VOUT[0]: self._handle_cmd_read_vout,
+            pybic.cmd.VOUT_SET[0]: self._handle_cmd_vout_set,
             pybic.cmd.REVERSE_IOUT_SET[0]: self._handle_cmd_reverse_iout,
+            pybic.cmd.IOUT_SET[0]: self._handle_cmd_iout_set,
             pybic.cmd.SYSTEM_CONFIG[0]: self._handle_cmd_system_config,
             pybic.cmd.BIDIRECTIONAL_CONFIG[0]: self._handle_cmd_bidirectional_config,
             pybic.cmd.DIRECTION_CTRL[0]: self._handle_cmd_direction_ctrl,
@@ -131,6 +133,13 @@ class BicListener(can.Listener):
             "v_out", v_out_raw * self._bic.scaling_factor["v_out"]
         )
 
+    def _handle_cmd_vout_set(self, msg: can.message.Message) -> None:
+        (v_out_raw,) = struct.unpack("<H", msg.data[2 : msg.dlc])
+
+        self._fulfill_bic_promises(
+            "v_out_set", v_out_raw * self._bic.scaling_factor["v_out"]
+        )
+
     def _handle_cmd_scaling_factor(self, msg: can.message.Message) -> None:
         # trim the command from the data
         data = msg.data[2:]
@@ -198,6 +207,13 @@ class BicListener(can.Listener):
 
         self._fulfill_bic_promises(
             "reverse_i_out", rev_i_out_raw * self._bic.scaling_factor["i_out"]
+        )
+
+    def _handle_cmd_iout_set(self, msg: can.message.Message) -> None:
+        (i_out_set_raw,) = struct.unpack("<H", msg.data[2 : msg.dlc])
+
+        self._fulfill_bic_promises(
+            "i_out_set", i_out_set_raw * self._bic.scaling_factor["i_out"]
         )
 
     def _handle_cmd_read_iout(self, msg: can.message.Message) -> None:

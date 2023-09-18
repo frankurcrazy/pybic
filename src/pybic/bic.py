@@ -181,6 +181,14 @@ class Bic:
 
         self._msg_sender.send(msg)
 
+    @property
+    @wait_for("v_out_set")
+    def v_out_set(self):
+        """query the v_out_set of the bic"""
+        msg = self._msg_factory(command=pybic.cmd.VOUT_SET)
+
+        self._msg_sender.send(msg)
+
     @v_out.setter
     def v_out(self, value):
         """set the v_out of the bic"""
@@ -199,6 +207,14 @@ class Bic:
     def i_out(self):
         """query the i_out of the bic"""
         msg = self._msg_factory(command=pybic.cmd.READ_IOUT)
+
+        self._msg_sender.send(msg)
+
+    @property
+    @wait_for("i_out_set")
+    def i_out_set(self):
+        """query the i_out of the bic"""
+        msg = self._msg_factory(command=pybic.cmd.IOUT_SET)
 
         self._msg_sender.send(msg)
 
